@@ -7,6 +7,7 @@ const rateLimit = require('express-rate-limit');
 const { allowedOrigins, isProduction } = require('./config/env');
 const publicRoutes = require('./routes/publicRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const authRoutes = require('./routes/authRoutes');
 const { notFound, errorHandler } = require('./middleware/error');
 
 const app = express();
@@ -52,6 +53,9 @@ const authLimiter = rateLimit({
 });
 
 app.use(globalLimiter);
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
+app.use('/api/auth/google', authLimiter);
 app.use('/api/admin/login', authLimiter);
 
 app.get('/', (_req, res) => {
@@ -62,6 +66,7 @@ app.get('/health', (_req, res) => {
   res.json({ success: true, status: 'ok' });
 });
 
+app.use('/api/auth', authRoutes);
 app.use('/api', publicRoutes);
 app.use('/api/admin', adminRoutes);
 

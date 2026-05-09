@@ -1,9 +1,8 @@
 const app = require('./app');
-const { port } = require('./config/env');
+const { port, storeDefaults } = require('./config/env');
 const { connectDB, registerMongoEvents } = require('./config/db');
-const { ensureDefaultAdmin } = require('./controllers/adminController');
+const { ensureDefaultAdmin } = require('./controller/adminController');
 const StoreConfig = require('./models/StoreConfig');
-const { storeDefaults } = require('./config/env');
 
 async function ensureStoreConfig() {
   const existing = await StoreConfig.findOne();
