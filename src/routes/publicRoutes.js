@@ -1,5 +1,5 @@
 const express = require('express');
-const publicController = require('../controllers/publicController');
+const publicController = require('../controller/publicController');
 const { asyncHandler } = require('../utils/http');
 
 const router = express.Router();
