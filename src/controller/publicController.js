@@ -3,7 +3,7 @@ const Order = require('../models/Order');
 const Product = require('../models/Product');
 const StoreConfig = require('../models/StoreConfig');
 const { frontendPaymentCallbackUrl, flutterwaveWebhookHash, storeDefaults } = require('../config/env');
-const { initializeFlutterwavePayment, verifyFlutterwaveTransaction } = require('../services/flutterwave');
+const { initializeFlutterwavePayment, verifyFlutterwaveTransaction } = require('../service/flutterwave');
 const { AppError, asyncHandler, sendSuccess } = require('../utils/http');
 const { makeOrderRef, makeTxRef, pickPublicConfig, serializeOrder, serializeProduct } = require('../utils/helpers');
 
@@ -222,5 +222,5 @@ exports.handleFlutterwaveWebhook = asyncHandler(async (req, res) => {
     }
   }
 
-  sendSuccess(res, { received: true });
+  return sendSuccess(res, { received: true });
 });
