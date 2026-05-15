@@ -10,7 +10,7 @@ async function resolveAuthEntity(payload = {}) {
     throw new AppError('Authentication token is invalid.', 401);
   }
 
-  if (payload.role === 'admin' || payload.type === 'admin') {
+  if (payload.type === 'admin') {
     const admin = await Admin.findById(id);
     if (!admin || !admin.active) {
       throw new AppError('Admin session is invalid or expired.', 401);
@@ -35,7 +35,7 @@ async function resolveAuthEntity(payload = {}) {
     id: String(user._id),
     name: user.name,
     email: user.email,
-    role: user.role || 'user',
+    role: user.role || payload.role || 'user',
     avatar: user.avatar || '',
     type: 'user',
     entity: user,
