@@ -1,7 +1,6 @@
 const app = require('./app');
 const { port, storeDefaults } = require('./config/env');
 const { connectDB, registerMongoEvents } = require('./config/db');
-const { ensureDefaultAdmin } = require('./controller/adminController');
 const StoreConfig = require('./models/StoreConfig');
 
 async function ensureStoreConfig() {
@@ -16,7 +15,6 @@ async function bootstrap() {
   try {
     registerMongoEvents();
     await connectDB();
-    await ensureDefaultAdmin();
     await ensureStoreConfig();
 
     app.listen(port, () => {
