@@ -11,6 +11,7 @@ router.post('/products', requireAdmin, adminController.createProduct);
 router.put('/products/:id', requireAdmin, adminController.updateProduct);
 router.delete('/products/:id', requireAdmin, adminController.deleteProduct);
 router.get('/orders', requireAdmin, adminController.getOrders);
+router.delete('/orders', requireAdmin, adminController.clearOrders);
 router.patch('/orders/:id', requireAdmin, adminController.updateOrder);
 router.get('/config', requireAdmin, adminController.getAdminConfig);
 router.patch('/config', requireAdmin, adminController.updateAdminConfig);
