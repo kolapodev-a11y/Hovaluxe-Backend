@@ -66,7 +66,7 @@ exports.getSummary = asyncHandler(async (_req, res) => {
 });
 
 exports.getAdminProducts = asyncHandler(async (_req, res) => {
-  const products = await Product.find().sort({ createdAt: -1 });
+  const products = await Product.find().sort({ createdAt: -1 }).lean();
   sendSuccess(res, { data: products.map(serializeProduct) });
 });
 
