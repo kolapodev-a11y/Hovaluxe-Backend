@@ -45,7 +45,12 @@ exports.createFlutterwaveCheckout = asyncHandler(async (req, res) => {
     items = [],
   } = req.body || {};
 
-  if (!customerName || !customerPhone || !customerEmail || !shippingAddress) {
+  const resolvedCustomerName = String(customerName || req.auth?.name || '').trim();
+  const resolvedCustomerPhone = String(customerPhone || '').trim();
+  const resolvedCustomerEmail = String(customerEmail || req.auth?.email || '').trim().toLowerCase();
+  const resolvedShippingAddress = String(shippingAddress || '').trim();
+
+  if (!resolvedCustomerName || !resolvedCustomerPhone || !resolvedCustomerEmail || !resolvedShippingAddress) {
     throw new AppError('Customer name, phone, email, and shipping address are required.', 400);
   }
 
@@ -88,10 +93,10 @@ exports.createFlutterwaveCheckout = asyncHandler(async (req, res) => {
   const order = await Order.create({
     orderRef,
     txRef,
-    customerName: customerName.trim(),
-    customerPhone: customerPhone.trim(),
-    customerEmail: customerEmail.trim().toLowerCase(),
-    shippingAddress: shippingAddress.trim(),
+    customerName: resolvedCustomerName,
+    customerPhone: resolvedCustomerPhone,
+    customerEmail: resolvedCustomerEmail,
+    shippingAddress: resolvedShippingAddress,
     notes: String(notes || '').trim(),
     paymentMethod: 'flutterwave',
     paymentStatus: 'initiated',
@@ -110,9 +115,9 @@ exports.createFlutterwaveCheckout = asyncHandler(async (req, res) => {
     currency: config.currency,
     redirect_url: frontendPaymentCallbackUrl,
     customer: {
-      email: customerEmail.trim().toLowerCase(),
-      phonenumber: customerPhone.trim(),
-      name: customerName.trim(),
+      email: resolvedCustomerEmail,
+      phonenumber: resolvedCustomerPhone,
+      name: resolvedCustomerName,
     },
     meta: {
       orderRef,

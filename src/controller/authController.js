@@ -177,6 +177,9 @@ exports.login = asyncHandler(async (req, res) => {
 exports.providers = asyncHandler(async (_req, res) => {
   sendSuccess(res, {
     data: {
+      email: {
+        enabled: true,
+      },
       google: {
         enabled: Boolean(googleClientId),
       },
