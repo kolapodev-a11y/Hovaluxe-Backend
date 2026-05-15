@@ -28,10 +28,18 @@ function normalizeOrigin(value = '') {
   }
 }
 
+function normalizeEmail(value = '') {
+  return String(value || '').trim().toLowerCase();
+}
+
 const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:5173/#').trim();
 const explicitAllowedOrigins = csv(process.env.ALLOWED_ORIGINS).map(normalizeOrigin);
 const frontendOrigin = normalizeOrigin(frontendUrl);
 const allowedOrigins = [...new Set([...DEFAULT_ALLOWED_ORIGINS.map(normalizeOrigin), frontendOrigin, ...explicitAllowedOrigins].filter(Boolean))];
+const adminEmails = [...new Set([
+  ...csv(process.env.ADMIN_EMAILS),
+  process.env.ADMIN_EMAIL || '',
+].map(normalizeEmail).filter(Boolean))];
 
 module.exports = {
   nodeEnv: process.env.NODE_ENV || 'development',
@@ -41,8 +49,7 @@ module.exports = {
   jwtSecret: process.env.JWT_SECRET || 'hovaluxe_change_this_secret',
   authJwtExpiresIn: process.env.AUTH_JWT_EXPIRES_IN || '12h',
   googleClientId: (process.env.GOOGLE_CLIENT_ID || process.env.GOGGLE_CLIENT_ID || '').trim(),
-  adminEmail: (process.env.ADMIN_EMAIL || 'admin@hovaluxe.com').trim().toLowerCase(),
-  adminPassword: process.env.ADMIN_PASSWORD || 'change_me_now',
+  adminEmails,
   adminName: process.env.ADMIN_NAME || 'Hovaluxe Admin',
   frontendUrl,
   frontendPaymentCallbackUrl:
