@@ -40,7 +40,7 @@ module.exports = {
   mongoUri: process.env.MONGODB_URI || '',
   jwtSecret: process.env.JWT_SECRET || 'hovaluxe_change_this_secret',
   authJwtExpiresIn: process.env.AUTH_JWT_EXPIRES_IN || '12h',
-  googleClientId: (process.env.GOOGLE_CLIENT_ID || '').trim(),
+  googleClientId: (process.env.GOOGLE_CLIENT_ID || process.env.GOGGLE_CLIENT_ID || '').trim(),
   adminEmail: (process.env.ADMIN_EMAIL || 'admin@hovaluxe.com').trim().toLowerCase(),
   adminPassword: process.env.ADMIN_PASSWORD || 'change_me_now',
   adminName: process.env.ADMIN_NAME || 'Hovaluxe Admin',
