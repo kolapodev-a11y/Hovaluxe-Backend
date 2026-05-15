@@ -174,6 +174,16 @@ exports.login = asyncHandler(async (req, res) => {
   });
 });
 
+exports.providers = asyncHandler(async (_req, res) => {
+  sendSuccess(res, {
+    data: {
+      google: {
+        enabled: Boolean(googleClientId),
+      },
+    },
+  });
+});
+
 exports.google = asyncHandler(async (req, res) => {
   const { credential = '' } = req.body || {};
   const profile = await verifyGoogleCredential(credential);
