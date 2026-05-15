@@ -1,12 +1,9 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
-const Admin = require('../models/Admin');
 const User = require('../models/User');
 const {
-  adminEmail,
-  adminName,
-  adminPassword,
+  adminEmails,
   authJwtExpiresIn,
   googleClientId,
   jwtSecret,
@@ -31,38 +28,9 @@ function issueToken({ id, role, type }) {
   return jwt.sign({ sub: String(id), role, type }, jwtSecret, { expiresIn: authJwtExpiresIn });
 }
 
-async function ensureAdminAccount() {
-  let admin = await Admin.findOne({ email: adminEmail });
-
-  if (!admin) {
-    const passwordHash = await bcrypt.hash(adminPassword, 10);
-    admin = await Admin.create({
-      name: adminName,
-      email: adminEmail,
-      passwordHash,
-      role: 'admin',
-      active: true,
-    });
-    return admin;
-  }
-
-  let changed = false;
-
-  if (admin.role !== 'admin') {
-    admin.role = 'admin';
-    changed = true;
-  }
-
-  if (!admin.active) {
-    admin.active = true;
-    changed = true;
-  }
-
-  if (changed) {
-    await admin.save();
-  }
-
-  return admin;
+function resolveAssignedRole(email = '') {
+  const normalizedEmail = String(email || '').trim().toLowerCase();
+  return adminEmails.includes(normalizedEmail) ? 'admin' : 'user';
 }
 
 async function verifyGoogleCredential(credential = '') {
@@ -107,22 +75,19 @@ exports.register = asyncHandler(async (req, res) => {
     throw new AppError('Password must be at least 6 characters long.', 400);
   }
 
-  if (normalizedEmail === adminEmail) {
-    throw new AppError('This email is reserved for admin access and cannot be registered publicly.', 403);
-  }
-
   const existingUser = await User.findOne({ email: normalizedEmail });
   if (existingUser) {
     throw new AppError('An account with this email already exists.', 409);
   }
 
   const passwordHash = await bcrypt.hash(normalizedPassword, 10);
+  const assignedRole = resolveAssignedRole(normalizedEmail);
   const user = await User.create({
     name: trimmedName,
     email: normalizedEmail,
     passwordHash,
     provider: 'email',
-    role: 'user',
+    role: assignedRole,
     active: true,
   });
 
@@ -133,8 +98,8 @@ exports.register = asyncHandler(async (req, res) => {
     res,
     {
       data: {
-        token: issueToken({ id: user._id, role: 'user', type: 'user' }),
-        user: serializeAuthUser(user, 'user'),
+        token: issueToken({ id: user._id, role: assignedRole, type: 'user' }),
+        user: serializeAuthUser(user, assignedRole),
       },
       message: 'Account created successfully.',
     },
@@ -151,26 +116,6 @@ exports.login = asyncHandler(async (req, res) => {
     throw new AppError('Email and password are required.', 400);
   }
 
-  if (normalizedEmail === adminEmail) {
-    const admin = await ensureAdminAccount();
-    const valid = await bcrypt.compare(normalizedPassword, admin.passwordHash);
-
-    if (!valid || !admin.active) {
-      throw new AppError('Invalid login credentials.', 401);
-    }
-
-    admin.lastLoginAt = new Date();
-    await admin.save();
-
-    return sendSuccess(res, {
-      data: {
-        token: issueToken({ id: admin._id, role: 'admin', type: 'admin' }),
-        user: serializeAuthUser(admin, 'admin'),
-      },
-      message: 'Signed in successfully.',
-    });
-  }
-
   const user = await User.findOne({ email: normalizedEmail });
   if (!user || !user.active || !user.passwordHash) {
     throw new AppError('Invalid login credentials.', 401);
@@ -181,13 +126,18 @@ exports.login = asyncHandler(async (req, res) => {
     throw new AppError('Invalid login credentials.', 401);
   }
 
+  const assignedRole = resolveAssignedRole(user.email);
+  if (user.role !== assignedRole) {
+    user.role = assignedRole;
+  }
+
   user.lastLoginAt = new Date();
   await user.save();
 
   sendSuccess(res, {
     data: {
-      token: issueToken({ id: user._id, role: user.role || 'user', type: 'user' }),
-      user: serializeAuthUser(user, user.role || 'user'),
+      token: issueToken({ id: user._id, role: assignedRole, type: 'user' }),
+      user: serializeAuthUser(user, assignedRole),
     },
     message: 'Signed in successfully.',
   });
@@ -214,24 +164,7 @@ exports.google = asyncHandler(async (req, res) => {
     throw new AppError('Google account email is not verified.', 401);
   }
 
-  if (profile.email === adminEmail) {
-    const admin = await ensureAdminAccount();
-    admin.name = profile.name || admin.name;
-    admin.lastLoginAt = new Date();
-    await admin.save();
-
-    return sendSuccess(res, {
-      data: {
-        token: issueToken({ id: admin._id, role: 'admin', type: 'admin' }),
-        user: {
-          ...serializeAuthUser(admin, 'admin'),
-          avatar: profile.avatar,
-        },
-      },
-      message: 'Google sign-in completed.',
-    });
-  }
-
+  const assignedRole = resolveAssignedRole(profile.email);
   let user = await User.findOne({ email: profile.email });
 
   if (!user) {
@@ -241,7 +174,7 @@ exports.google = asyncHandler(async (req, res) => {
       googleId: profile.googleId,
       avatar: profile.avatar,
       provider: 'google',
-      role: 'user',
+      role: assignedRole,
       active: true,
     });
   } else {
@@ -249,6 +182,7 @@ exports.google = asyncHandler(async (req, res) => {
     user.googleId = profile.googleId || user.googleId;
     user.avatar = profile.avatar || user.avatar;
     user.provider = user.passwordHash ? 'hybrid' : 'google';
+    user.role = assignedRole;
     user.active = true;
   }
 
@@ -257,8 +191,8 @@ exports.google = asyncHandler(async (req, res) => {
 
   sendSuccess(res, {
     data: {
-      token: issueToken({ id: user._id, role: user.role || 'user', type: 'user' }),
-      user: serializeAuthUser(user, user.role || 'user'),
+      token: issueToken({ id: user._id, role: assignedRole, type: 'user' }),
+      user: serializeAuthUser(user, assignedRole),
     },
     message: 'Google sign-in completed.',
   });

@@ -1,12 +1,9 @@
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const Admin = require('../models/Admin');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
 const StoreConfig = require('../models/StoreConfig');
-const { adminEmail, adminName, adminPassword, jwtSecret, storeDefaults } = require('../config/env');
+const { storeDefaults } = require('../config/env');
 const { AppError, asyncHandler, sendSuccess } = require('../utils/http');
-const { makeOrderRef, pickPublicConfig, serializeOrder, serializeProduct, slugify } = require('../utils/helpers');
+const { pickPublicConfig, serializeOrder, serializeProduct, slugify } = require('../utils/helpers');
 
 function normalizeProductImages(payload = {}) {
   const gallery = [
@@ -28,60 +25,13 @@ async function getStoreConfig() {
 }
 
 async function ensureDefaultAdmin() {
-  const existing = await Admin.findOne({ email: adminEmail });
-  const passwordHash = await bcrypt.hash(adminPassword, 10);
-
-  if (!existing) {
-    await Admin.create({
-      name: adminName,
-      email: adminEmail,
-      passwordHash,
-      active: true,
-    });
-    console.log(`✅ Default admin provisioned for ${adminEmail}`);
-    return;
-  }
-
-  if (!existing.active) {
-    existing.active = true;
-  }
-
-  existing.name = adminName;
-  existing.role = 'admin';
-  existing.passwordHash = passwordHash;
-  await existing.save();
-  console.log(`ℹ️ Default admin refreshed for ${adminEmail}`);
+  return null;
 }
 
 exports.ensureDefaultAdmin = ensureDefaultAdmin;
 
-exports.login = asyncHandler(async (req, res) => {
-  const { email = '', password = '' } = req.body || {};
-  const admin = await Admin.findOne({ email: email.trim().toLowerCase() });
-
-  if (!admin || !admin.active) {
-    throw new AppError('Invalid admin credentials.', 401);
-  }
-
-  const valid = await bcrypt.compare(password, admin.passwordHash);
-  if (!valid) {
-    throw new AppError('Invalid admin credentials.', 401);
-  }
-
-  admin.lastLoginAt = new Date();
-  await admin.save();
-
-  const token = jwt.sign({ id: admin._id, role: admin.role }, jwtSecret, { expiresIn: '12h' });
-
-  sendSuccess(res, {
-    token,
-    admin: {
-      id: String(admin._id),
-      name: admin.name,
-      email: admin.email,
-      role: admin.role,
-    },
-  });
+exports.login = asyncHandler(async (_req, _res) => {
+  throw new AppError('Direct admin login is disabled. Sign in with /api/auth/login or /api/auth/google using an allowed admin email.', 410);
 });
 
 exports.getSummary = asyncHandler(async (_req, res) => {
