@@ -11,6 +11,11 @@ const authRoutes = require('./routes/authRoutes');
 const { notFound, errorHandler } = require('./middleware/error');
 
 const app = express();
+const previewOriginPattern = /^https:\/\/hovaluxe-store(?:-[a-z0-9-]+)?\.vercel\.app$/i;
+
+function normalizeOrigin(value = '') {
+  return String(value || '').trim().replace(/\/$/, '');
+}
 
 app.disable('x-powered-by');
 app.set('trust proxy', 1);
@@ -24,9 +29,12 @@ app.use(compression());
 app.use(
   cors({
     origin(origin, callback) {
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) return callback(null, true);
-      return callback(new Error(`CORS blocked origin: ${origin}`));
+      const normalizedOrigin = normalizeOrigin(origin);
+      if (!normalizedOrigin) return callback(null, true);
+      if (allowedOrigins.includes(normalizedOrigin) || previewOriginPattern.test(normalizedOrigin)) {
+        return callback(null, true);
+      }
+      return callback(new Error(`CORS blocked origin: ${normalizedOrigin}`));
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
