@@ -2,13 +2,36 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
+const DEFAULT_ALLOWED_ORIGINS = [
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'https://hovaluxe-store.vercel.app',
+];
+
 const csv = (value = '') =>
   value
     .split(',')
     .map((item) => item.trim())
     .filter(Boolean);
 
+function normalizeOrigin(value = '') {
+  const trimmed = String(value || '').trim();
+  if (!trimmed) return '';
+
+  try {
+    return new URL(trimmed).origin;
+  } catch {
+    return trimmed
+      .replace(/#.*$/, '')
+      .replace(/\/api(?:\/.*)?$/i, '')
+      .replace(/\/$/, '');
+  }
+}
+
 const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:5173/#').trim();
+const explicitAllowedOrigins = csv(process.env.ALLOWED_ORIGINS).map(normalizeOrigin);
+const frontendOrigin = normalizeOrigin(frontendUrl);
+const allowedOrigins = [...new Set([...DEFAULT_ALLOWED_ORIGINS.map(normalizeOrigin), frontendOrigin, ...explicitAllowedOrigins].filter(Boolean))];
 
 module.exports = {
   nodeEnv: process.env.NODE_ENV || 'development',
@@ -24,10 +47,7 @@ module.exports = {
   frontendUrl,
   frontendPaymentCallbackUrl:
     (process.env.FRONTEND_PAYMENT_CALLBACK_URL || `${frontendUrl.replace(/\/$/, '')}/payment/callback`).trim(),
-  allowedOrigins: csv(
-    process.env.ALLOWED_ORIGINS ||
-      'http://localhost:5173,http://127.0.0.1:5173,https://hovaluxe-store.vercel.app',
-  ),
+  allowedOrigins,
   flutterwavePublicKey: (process.env.FLUTTERWAVE_PUBLIC_KEY || '').trim(),
   flutterwaveSecretKey: (process.env.FLUTTERWAVE_SECRET_KEY || '').trim(),
   flutterwaveWebhookHash: (process.env.FLUTTERWAVE_WEBHOOK_HASH || '').trim(),
