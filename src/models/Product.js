@@ -21,6 +21,14 @@ const productSchema = new mongoose.Schema(
     description: { type: String, required: true, trim: true },
     featured: { type: Boolean, default: false },
     image: { type: String, default: '' },
+    images: {
+      type: [String],
+      default: [],
+      validate: {
+        validator: (value) => Array.isArray(value) && value.length <= 4,
+        message: 'A product can have at most 4 images.',
+      },
+    },
     isActive: { type: Boolean, default: true },
   },
   { timestamps: true },
