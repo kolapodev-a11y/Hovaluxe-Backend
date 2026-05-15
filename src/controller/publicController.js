@@ -31,8 +31,24 @@ exports.getPublicConfig = asyncHandler(async (_req, res) => {
 });
 
 exports.getProducts = asyncHandler(async (_req, res) => {
-  const products = await Product.find({ isActive: true }).sort({ featured: -1, createdAt: -1 });
+  const products = await Product.find({ isActive: true }).sort({ createdAt: -1 });
   sendSuccess(res, { data: products.map(serializeProduct) });
+});
+
+exports.getMyOrders = asyncHandler(async (req, res) => {
+  const authId = String(req.auth?.id || '').trim();
+  const authEmail = String(req.auth?.email || '').trim().toLowerCase();
+
+  const filter = {
+    paymentMethod: 'flutterwave',
+    $or: [
+      ...(authId ? [{ userId: authId }] : []),
+      ...(authEmail ? [{ customerEmail: authEmail }] : []),
+    ],
+  };
+
+  const orders = await Order.find(filter).sort({ createdAt: -1 });
+  sendSuccess(res, { data: orders.map(serializeOrder) });
 });
 
 exports.createFlutterwaveCheckout = asyncHandler(async (req, res) => {
@@ -93,6 +109,7 @@ exports.createFlutterwaveCheckout = asyncHandler(async (req, res) => {
   const order = await Order.create({
     orderRef,
     txRef,
+    userId: req.auth?.type === 'user' ? req.auth.id : null,
     customerName: resolvedCustomerName,
     customerPhone: resolvedCustomerPhone,
     customerEmail: resolvedCustomerEmail,

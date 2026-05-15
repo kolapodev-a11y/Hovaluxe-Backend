@@ -85,15 +85,15 @@ exports.login = asyncHandler(async (req, res) => {
 });
 
 exports.getSummary = asyncHandler(async (_req, res) => {
-  const [productsCount, lowStockCount, flutterwaveOrders, whatsappOrders, revenueResult] = await Promise.all([
+  const [productsCount, lowStockCount, flutterwaveOrders, revenueResult] = await Promise.all([
     Product.countDocuments({ isActive: true }),
     Product.countDocuments({ isActive: true, $or: [{ status: 'low-stock' }, { inventoryQuantity: { $lte: 5 } }] }),
     Order.countDocuments({ paymentMethod: 'flutterwave' }),
-    Order.countDocuments({ paymentMethod: 'whatsapp_manual' }),
     Order.aggregate([
       {
         $match: {
-          paymentStatus: { $in: ['paid', 'recorded'] },
+          paymentMethod: 'flutterwave',
+          paymentStatus: 'paid',
         },
       },
       {
@@ -110,7 +110,6 @@ exports.getSummary = asyncHandler(async (_req, res) => {
       productsCount,
       lowStockCount,
       flutterwaveOrders,
-      whatsappOrders,
       paidRevenue: revenueResult[0]?.total || 0,
     },
   });
@@ -181,20 +180,15 @@ exports.deleteProduct = asyncHandler(async (req, res) => {
   sendSuccess(res, { message: 'Product deleted successfully.' });
 });
 
-exports.getOrders = asyncHandler(async (req, res) => {
-  const filter = {};
-  if (req.query.paymentMethod && req.query.paymentMethod !== 'all') {
-    filter.paymentMethod = req.query.paymentMethod;
-  }
-
-  const orders = await Order.find(filter).sort({ createdAt: -1 });
+exports.getOrders = asyncHandler(async (_req, res) => {
+  const orders = await Order.find({ paymentMethod: 'flutterwave' }).sort({ createdAt: -1 });
   sendSuccess(res, { data: orders.map(serializeOrder) });
 });
 
 exports.updateOrder = asyncHandler(async (req, res) => {
   const { paymentStatus, fulfilmentStatus, adminNote } = req.body || {};
   const order = await Order.findById(req.params.id);
-  if (!order) {
+  if (!order || order.paymentMethod !== 'flutterwave') {
     throw new AppError('Order not found.', 404);
   }
 
@@ -217,60 +211,6 @@ exports.updateOrder = asyncHandler(async (req, res) => {
 
   await order.save();
   sendSuccess(res, { data: serializeOrder(order) });
-});
-
-exports.recordWhatsAppOrder = asyncHandler(async (req, res) => {
-  const {
-    customerName,
-    customerPhone,
-    customerEmail = '',
-    shippingAddress,
-    notes = '',
-    adminNote = '',
-    deliveryFee = 0,
-    items = [],
-  } = req.body || {};
-
-  if (!customerName || !customerPhone || !shippingAddress) {
-    throw new AppError('Customer name, phone, and shipping address are required.', 400);
-  }
-
-  if (!Array.isArray(items) || !items.length) {
-    throw new AppError('At least one product item is required.', 400);
-  }
-
-  const snapshotItems = items.map((item) => ({
-    productId: item.productId || null,
-    name: item.name,
-    category: item.category || '',
-    image: item.image || '',
-    price: Number(item.price || 0),
-    quantity: Number(item.quantity || 1),
-    total: Number(item.price || 0) * Number(item.quantity || 1),
-  }));
-
-  const subtotal = snapshotItems.reduce((sum, item) => sum + item.total, 0);
-  const normalizedDeliveryFee = Number(deliveryFee || 0);
-  const order = await Order.create({
-    orderRef: makeOrderRef('HOV-WA'),
-    customerName: customerName.trim(),
-    customerPhone: customerPhone.trim(),
-    customerEmail: String(customerEmail || '').trim().toLowerCase(),
-    shippingAddress: shippingAddress.trim(),
-    notes: String(notes || '').trim(),
-    adminNote: String(adminNote || '').trim(),
-    paymentMethod: 'whatsapp_manual',
-    paymentStatus: 'recorded',
-    fulfilmentStatus: 'new',
-    subtotal,
-    deliveryFee: normalizedDeliveryFee,
-    totalAmount: subtotal + normalizedDeliveryFee,
-    currency: (await getStoreConfig()).currency,
-    items: snapshotItems,
-    timeline: [{ status: 'recorded', note: 'WhatsApp order recorded by storekeeper.' }],
-  });
-
-  sendSuccess(res, { data: serializeOrder(order) }, 201);
 });
 
 exports.getAdminConfig = asyncHandler(async (_req, res) => {
