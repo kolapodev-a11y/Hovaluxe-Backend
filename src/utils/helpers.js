@@ -25,23 +25,39 @@ const pickPublicConfig = (config) => ({
   flutterwavePublicKey: config.flutterwavePublicKey || '',
 });
 
-const serializeProduct = (product) => ({
-  id: String(product._id),
-  name: product.name,
-  slug: product.slug,
-  category: product.category,
-  price: product.price,
-  status: product.status,
-  inventoryQuantity: product.inventoryQuantity,
-  volume: product.volume,
-  sku: product.sku,
-  description: product.description,
-  featured: product.featured,
-  image: product.image,
-  isActive: product.isActive,
-  createdAt: product.createdAt,
-  updatedAt: product.updatedAt,
-});
+function normalizeProductImages(product) {
+  const gallery = [
+    ...(Array.isArray(product?.images) ? product.images : []),
+    product?.image,
+  ]
+    .map((item) => String(item || '').trim())
+    .filter(Boolean);
+
+  return [...new Set(gallery)].slice(0, 4);
+}
+
+const serializeProduct = (product) => {
+  const images = normalizeProductImages(product);
+
+  return {
+    id: String(product._id),
+    name: product.name,
+    slug: product.slug,
+    category: product.category,
+    price: product.price,
+    status: product.status,
+    inventoryQuantity: product.inventoryQuantity,
+    volume: product.volume,
+    sku: product.sku,
+    description: product.description,
+    featured: product.featured,
+    image: images[0] || '',
+    images,
+    isActive: product.isActive,
+    createdAt: product.createdAt,
+    updatedAt: product.updatedAt,
+  };
+};
 
 const serializeOrder = (order) => ({
   id: String(order._id),
