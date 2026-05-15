@@ -8,6 +8,17 @@ const { adminEmail, adminName, adminPassword, jwtSecret, storeDefaults } = requi
 const { AppError, asyncHandler, sendSuccess } = require('../utils/http');
 const { makeOrderRef, pickPublicConfig, serializeOrder, serializeProduct, slugify } = require('../utils/helpers');
 
+function normalizeProductImages(payload = {}) {
+  const gallery = [
+    ...(Array.isArray(payload.images) ? payload.images : []),
+    payload.image,
+  ]
+    .map((item) => String(item || '').trim())
+    .filter(Boolean);
+
+  return [...new Set(gallery)].slice(0, 4);
+}
+
 async function getStoreConfig() {
   let config = await StoreConfig.findOne();
   if (!config) {
@@ -112,6 +123,7 @@ exports.getAdminProducts = asyncHandler(async (_req, res) => {
 
 exports.createProduct = asyncHandler(async (req, res) => {
   const payload = req.body || {};
+  const images = normalizeProductImages(payload);
   const product = await Product.create({
     name: payload.name,
     slug: slugify(payload.slug || payload.name),
@@ -123,7 +135,8 @@ exports.createProduct = asyncHandler(async (req, res) => {
     sku: payload.sku || '',
     description: payload.description,
     featured: Boolean(payload.featured),
-    image: payload.image || '',
+    image: images[0] || '',
+    images,
     isActive: payload.isActive !== false,
   });
 
@@ -147,7 +160,13 @@ exports.updateProduct = asyncHandler(async (req, res) => {
   product.sku = payload.sku ?? product.sku;
   product.description = payload.description ?? product.description;
   product.featured = payload.featured !== undefined ? Boolean(payload.featured) : product.featured;
-  product.image = payload.image ?? product.image;
+
+  if (payload.image !== undefined || payload.images !== undefined) {
+    const images = normalizeProductImages(payload);
+    product.images = images;
+    product.image = images[0] || '';
+  }
+
   product.isActive = payload.isActive !== undefined ? Boolean(payload.isActive) : product.isActive;
 
   await product.save();
