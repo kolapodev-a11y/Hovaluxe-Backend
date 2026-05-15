@@ -26,9 +26,10 @@ const orderSchema = new mongoose.Schema(
   {
     orderRef: { type: String, required: true, unique: true, index: true },
     txRef: { type: String, default: '', unique: true, sparse: true, index: true },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null, index: true },
     customerName: { type: String, required: true, trim: true },
     customerPhone: { type: String, required: true, trim: true },
-    customerEmail: { type: String, default: '', trim: true, lowercase: true },
+    customerEmail: { type: String, default: '', trim: true, lowercase: true, index: true },
     shippingAddress: { type: String, required: true, trim: true },
     notes: { type: String, default: '' },
     adminNote: { type: String, default: '' },
