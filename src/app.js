@@ -9,6 +9,7 @@ const publicRoutes = require('./routes/publicRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const authRoutes = require('./routes/authRoutes');
 const { notFound, errorHandler } = require('./middleware/error');
+const { AppError } = require('./utils/http');
 
 const app = express();
 const previewOriginPattern = /^https:\/\/hovaluxe-store(?:-[a-z0-9-]+)?\.vercel\.app$/i;
@@ -34,16 +35,23 @@ app.use(
       if (allowedOrigins.includes(normalizedOrigin) || previewOriginPattern.test(normalizedOrigin)) {
         return callback(null, true);
       }
-      return callback(new Error(`CORS blocked origin: ${normalizedOrigin}`));
+      return callback(new AppError(`CORS blocked origin: ${normalizedOrigin}`, 403));
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
+    optionsSuccessStatus: 204,
   }),
 );
 app.use(express.json({ limit: '4mb' }));
 app.use(express.urlencoded({ extended: true, limit: '4mb' }));
-app.use(morgan(isProduction ? 'combined' : 'dev'));
+app.use(
+  morgan(isProduction ? 'tiny' : 'dev', {
+    skip(req, res) {
+      return req.method === 'OPTIONS' || req.path === '/health' || req.path === '/api/health' || res.statusCode === 304;
+    },
+  }),
+);
 
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
