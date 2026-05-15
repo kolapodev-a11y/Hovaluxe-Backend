@@ -130,9 +130,32 @@ exports.deleteProduct = asyncHandler(async (req, res) => {
   sendSuccess(res, { message: 'Product deleted successfully.' });
 });
 
-exports.getOrders = asyncHandler(async (_req, res) => {
-  const orders = await Order.find({ paymentMethod: 'flutterwave' }).sort({ createdAt: -1 });
+exports.getOrders = asyncHandler(async (req, res) => {
+  const paymentMethod = String(req.query.paymentMethod || 'all').trim();
+  const filter = paymentMethod === 'all' ? {} : { paymentMethod };
+  const orders = await Order.find(filter).sort({ createdAt: -1 });
   sendSuccess(res, { data: orders.map(serializeOrder) });
+});
+
+exports.clearOrders = asyncHandler(async (req, res) => {
+  const paymentMethod = String(req.query.paymentMethod || 'all').trim();
+  const validPaymentMethods = ['all', 'flutterwave', 'whatsapp_manual'];
+
+  if (!validPaymentMethods.includes(paymentMethod)) {
+    throw new AppError('Invalid payment method filter.', 400);
+  }
+
+  const filter = paymentMethod === 'all' ? {} : { paymentMethod };
+  const result = await Order.deleteMany(filter);
+
+  sendSuccess(res, {
+    message: result.deletedCount
+      ? 'Transactions cleared successfully.'
+      : 'No transaction records found to clear.',
+    data: {
+      deletedCount: result.deletedCount,
+    },
+  });
 });
 
 exports.updateOrder = asyncHandler(async (req, res) => {
