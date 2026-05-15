@@ -36,6 +36,7 @@ async function ensureDefaultAdmin() {
   }
 
   existing.name = adminName;
+  existing.role = 'admin';
   existing.passwordHash = passwordHash;
   await existing.save();
   console.log(`ℹ️ Default admin refreshed for ${adminEmail}`);

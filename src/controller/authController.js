@@ -16,11 +16,13 @@ const { AppError, asyncHandler, sendSuccess } = require('../utils/http');
 const googleClient = googleClientId ? new OAuth2Client(googleClientId) : null;
 
 function serializeAuthUser(entity, fallbackRole) {
+  const role = fallbackRole === 'admin' ? 'admin' : entity.role || fallbackRole;
+
   return {
     id: String(entity._id),
     name: entity.name,
     email: entity.email,
-    role: entity.role || fallbackRole,
+    role,
     avatar: entity.avatar || '',
   };
 }
@@ -41,6 +43,23 @@ async function ensureAdminAccount() {
       role: 'admin',
       active: true,
     });
+    return admin;
+  }
+
+  let changed = false;
+
+  if (admin.role !== 'admin') {
+    admin.role = 'admin';
+    changed = true;
+  }
+
+  if (!admin.active) {
+    admin.active = true;
+    changed = true;
+  }
+
+  if (changed) {
+    await admin.save();
   }
 
   return admin;
