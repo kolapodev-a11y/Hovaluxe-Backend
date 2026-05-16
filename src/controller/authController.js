@@ -6,11 +6,12 @@ const {
   adminEmails,
   authJwtExpiresIn,
   googleClientId,
+  googleClientIds,
   jwtSecret,
 } = require('../config/env');
 const { AppError, asyncHandler, sendSuccess } = require('../utils/http');
 
-const googleClient = googleClientId ? new OAuth2Client(googleClientId) : null;
+const googleClient = googleClientIds.length ? new OAuth2Client() : null;
 
 function serializeAuthUser(entity, fallbackRole) {
   const role = fallbackRole === 'admin' ? 'admin' : entity.role || fallbackRole;
@@ -42,10 +43,23 @@ async function verifyGoogleCredential(credential = '') {
     throw new AppError('Google credential is required.', 400);
   }
 
-  const ticket = await googleClient.verifyIdToken({
-    idToken: credential,
-    audience: googleClientId,
-  });
+  let ticket;
+
+  try {
+    ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: googleClientIds.length === 1 ? googleClientIds[0] : googleClientIds,
+    });
+  } catch (error) {
+    if (/wrong recipient|audience/i.test(String(error?.message || ''))) {
+      throw new AppError(
+        'Google sign-in configuration mismatch between the website and server. Make sure both deployments use the same Google web client ID.',
+        401,
+      );
+    }
+
+    throw new AppError('Unable to verify the Google account.', 401);
+  }
 
   const payload = ticket.getPayload();
   if (!payload?.email) {
@@ -150,7 +164,8 @@ exports.providers = asyncHandler(async (_req, res) => {
         enabled: true,
       },
       google: {
-        enabled: Boolean(googleClientId),
+        enabled: Boolean(googleClientIds.length),
+        clientId: googleClientId || '',
       },
     },
   });
