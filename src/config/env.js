@@ -40,6 +40,11 @@ const adminEmails = [...new Set([
   ...csv(process.env.ADMIN_EMAILS),
   process.env.ADMIN_EMAIL || '',
 ].map(normalizeEmail).filter(Boolean))];
+const googleClientIds = [...new Set([
+  ...csv(process.env.GOOGLE_CLIENT_IDS),
+  process.env.GOOGLE_CLIENT_ID || '',
+  process.env.GOGGLE_CLIENT_ID || '',
+].map((value) => String(value || '').trim()).filter(Boolean))];
 
 module.exports = {
   nodeEnv: process.env.NODE_ENV || 'development',
@@ -48,7 +53,8 @@ module.exports = {
   mongoUri: process.env.MONGODB_URI || '',
   jwtSecret: process.env.JWT_SECRET || 'hovaluxe_change_this_secret',
   authJwtExpiresIn: process.env.AUTH_JWT_EXPIRES_IN || '12h',
-  googleClientId: (process.env.GOOGLE_CLIENT_ID || process.env.GOGGLE_CLIENT_ID || '').trim(),
+  googleClientId: googleClientIds[0] || '',
+  googleClientIds,
   adminEmails,
   adminName: process.env.ADMIN_NAME || 'Hovaluxe Admin',
   frontendUrl,
