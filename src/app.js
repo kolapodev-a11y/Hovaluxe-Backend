@@ -12,7 +12,7 @@ const { notFound, errorHandler } = require('./middleware/error');
 const { AppError } = require('./utils/http');
 
 const app = express();
-const previewOriginPattern = /^https:\/\/hovaluxe-store(?:-[a-z0-9-]+)?\.vercel\.app$/i;
+const previewOriginPattern = /^https:\/\/kunleluxe-store(?:-[a-z0-9-]+)?\.vercel\.app$/i;
 
 function normalizeOrigin(value = '') {
   return String(value || '').trim().replace(/\/$/, '');
@@ -75,7 +75,7 @@ app.use('/api/auth/google', authLimiter);
 app.use('/api/admin/login', authLimiter);
 
 app.get('/', (_req, res) => {
-  res.json({ success: true, message: 'Hovaluxe backend is running.' });
+  res.json({ success: true, message: 'Kunleluxe backend is running.' });
 });
 
 app.get('/health', (_req, res) => {

@@ -18,7 +18,7 @@ async function bootstrap() {
     await ensureStoreConfig();
 
     app.listen(port, () => {
-      console.log(`🚀 Hovaluxe backend listening on port ${port}`);
+      console.log(`🚀 Kunleluxe backend listening on port ${port}`);
     });
   } catch (error) {
     console.error('❌ Failed to start backend:', error.message);
