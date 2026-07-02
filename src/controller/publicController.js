@@ -22,7 +22,7 @@ function normalizeItems(items = []) {
 }
 
 exports.health = asyncHandler(async (_req, res) => {
-  sendSuccess(res, { status: 'ok', dbState: mongoose.connection.readyState, service: 'hovaluxe-backend' });
+  sendSuccess(res, { status: 'ok', dbState: mongoose.connection.readyState, service: 'kunleluxe-backend' });
 });
 
 exports.getPublicConfig = asyncHandler(async (_req, res) => {
@@ -142,7 +142,7 @@ exports.createFlutterwaveCheckout = asyncHandler(async (req, res) => {
     meta: {
       orderRef,
       orderId: String(order._id),
-      source: 'hovaluxe-storefront',
+      source: 'kunleluxe-storefront',
     },
     customizations: {
       title: config.businessName,
