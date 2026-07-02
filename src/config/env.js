@@ -5,7 +5,7 @@ dotenv.config();
 const DEFAULT_ALLOWED_ORIGINS = [
   'http://localhost:5173',
   'http://127.0.0.1:5173',
-  'https://hovaluxe-store.vercel.app',
+  'https://kunleluxe-store.vercel.app',
 ];
 
 const csv = (value = '') =>
@@ -51,12 +51,12 @@ module.exports = {
   isProduction: (process.env.NODE_ENV || 'development') === 'production',
   port: Number(process.env.PORT || 10000),
   mongoUri: process.env.MONGODB_URI || '',
-  jwtSecret: process.env.JWT_SECRET || 'hovaluxe_change_this_secret',
+  jwtSecret: process.env.JWT_SECRET || 'kunleluxe_change_this_secret',
   authJwtExpiresIn: process.env.AUTH_JWT_EXPIRES_IN || '12h',
   googleClientId: googleClientIds[0] || '',
   googleClientIds,
   adminEmails,
-  adminName: process.env.ADMIN_NAME || 'Hovaluxe Admin',
+  adminName: process.env.ADMIN_NAME || 'Kunleluxe Admin',
   frontendUrl,
   frontendPaymentCallbackUrl:
     (process.env.FRONTEND_PAYMENT_CALLBACK_URL || `${frontendUrl.replace(/\/$/, '')}/payment/callback`).trim(),
@@ -65,9 +65,9 @@ module.exports = {
   flutterwaveSecretKey: (process.env.FLUTTERWAVE_SECRET_KEY || '').trim(),
   flutterwaveWebhookHash: (process.env.FLUTTERWAVE_WEBHOOK_HASH || '').trim(),
   storeDefaults: {
-    businessName: 'Hovaluxe',
+    businessName: 'Kunleluxe',
     whatsappNumber: (process.env.STORE_WHATSAPP_NUMBER || '2348000000000').trim(),
-    supportEmail: (process.env.STORE_SUPPORT_EMAIL || 'hello@hovaluxe.com').trim(),
+    supportEmail: (process.env.STORE_SUPPORT_EMAIL || 'hello@kunleluxe.com').trim(),
     deliveryFee: Number(process.env.STORE_DELIVERY_FEE || 2500),
     currency: (process.env.STORE_CURRENCY || 'NGN').trim().toUpperCase(),
     heroNotice: (process.env.STORE_HERO_NOTICE || 'Nationwide delivery available').trim(),
