@@ -1,7 +1,7 @@
 {
-  "name": "hovaluxe-backend",
+  "name": "kunleluxe-backend",
   "version": "1.0.0",
-  "description": "Production-ready Express and MongoDB backend for Hovaluxe storefront and admin operations.",
+  "description": "Production-ready Express and MongoDB backend for Kunleluxe storefront and admin operations.",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
